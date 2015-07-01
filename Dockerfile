@@ -54,6 +54,8 @@ RUN apt-get update -qqy \
     curl \
     pwgen \
     bc \
+    ca-certificates \
+    curl \
   && mkdir -p /tmp/.X11-unix /tmp/.ICE-unix \
   && chmod 1777 /tmp/.X11-unix /tmp/.ICE-unix \
   && mkdir -p /var/log/sele \
@@ -258,7 +260,7 @@ RUN  mkdir -p ${SEL_HOME} \
 #==================
 # How to get cpu arch dynamically: $(lscpu | grep Architecture | sed "s/^.*_//")
 ENV CPU_ARCH 64
-ENV CHROME_DRIVER_FILE "chromedriver_linux${CPU_ARCH}.zip"
+ENV CHROME_DRIVER_FILE chromedriver_linux${CPU_ARCH}.zip
 ENV CHROME_DRIVER_BASE chromedriver.storage.googleapis.com
 # Gets latest chrome driver version. Or you can hard-code it, e.g. 2.15
 RUN mkdir -p ${NORMAL_USER_HOME}/tmp &&  cd ${NORMAL_USER_HOME}/tmp \
@@ -334,23 +336,23 @@ USER root
 # dbus-x11 is needed to avoid http://askubuntu.com/q/237893/134645
 # FIREFOX_VERSION can be latest // 38.0 // 37.0 // 37.0.1 // 37.0.2 and so on
 # FF_LANG can be either en-US // de // fr and so on
-ENV FIREFOX_VERSION latest
-ENV FF_LANG "en-US"
-RUN apt-get update -qqy \
-  && apt-get -qqy install \
-    python2.7 python-pip python2.7-dev python-openssl \
-    libssl-dev libffi-dev dbus-x11 \
-  && easy_install -U pip \
-  && pip install --upgrade mozdownload mozInstall \
-  && mkdir -p ${NORMAL_USER_HOME}/firefox-src \
-  && cd ${NORMAL_USER_HOME}/firefox-src \
-  && mozdownload --application=firefox --locale=$FF_LANG --retry-attempts=3 \
-      --platform=linux64 --log-level=WARN --version=$FIREFOX_VERSION \
-  && mozinstall --app=firefox \
-      firefox-$FIREFOX_VERSION.$FF_LANG.linux64.tar.bz2 \
-      --destination=${SEL_HOME} \
-  && ln -s ${SEL_HOME}/firefox/firefox /usr/bin \
-  && rm -rf /var/lib/apt/lists/*
+# ENV FIREFOX_VERSION latest
+# ENV FF_LANG "en-US"
+# RUN apt-get update -qqy \
+#   && apt-get -qqy install \
+#     python2.7 python-pip python2.7-dev python-openssl \
+#     libssl-dev libffi-dev dbus-x11 \
+#   && easy_install -U pip \
+#   && pip install --upgrade mozdownload mozInstall \
+#   && mkdir -p ${NORMAL_USER_HOME}/firefox-src \
+#   && cd ${NORMAL_USER_HOME}/firefox-src \
+#   && mozdownload --application=firefox --locale=$FF_LANG --retry-attempts=3 \
+#       --platform=linux64 --log-level=WARN --version=$FIREFOX_VERSION \
+#   && mozinstall --app=firefox \
+#       firefox-$FIREFOX_VERSION.$FF_LANG.linux64.tar.bz2 \
+#       --destination=${SEL_HOME} \
+#   && ln -s ${SEL_HOME}/firefox/firefox /usr/bin \
+#   && rm -rf /var/lib/apt/lists/*
 
 #==========================================
 # Chrome, Chromedriver, Firefox sudo steps
@@ -453,7 +455,7 @@ ENV CATALINA_HOME ${HOME}/tomcat
 # see https://www.apache.org/dist/tomcat/tomcat-8/KEYS
 RUN mkdir -p ${CATALINA_HOME} \
   && cd ${CATALINA_HOME} \
-  && gpg --keyserver pool.sks-keyservers.net --recv-keys \
+  && gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys \
        05AB33110949707C93A279E3D3EFE6B686867BA6 \
        07E48665A34DCAFAE522E5E6266191C37C037D42 \
        47309207D818FFD8DCD3F83F1931D684307A10A5 \
@@ -510,17 +512,21 @@ RUN cd /tmp \
 # NodeJS v0.10.39
 #=============================
 
-ENV NODE_VERSION 0.10.39
-ENV NPM_VERSION 2.11.3
+# verify gpg and sha256: http://nodejs.org/dist/v0.10.31/SHASUMS256.txt.asc
+# gpg: aka "Timothy J Fontaine (Work) <tj.fontaine@joyent.com>"
+RUN gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 7937DFD2AB06298B2293C3187D33FF9D0246406D
 
-RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
-	&& curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
-	&& gpg --verify SHASUMS256.txt.asc \
-	&& grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - \
-	&& tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
-	&& rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc \
-	&& npm install -g npm@"$NPM_VERSION" \
-	&& npm cache clear
+ENV NODE_VERSION 0.10.35
+ENV NPM_VERSION 2.1.18
+
+RUN sudo curl -SLO "http://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
+  && sudo curl -SLO "http://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
+  && gpg --verify SHASUMS256.txt.asc \
+  && grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - \
+  && sudo tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
+  && sudo rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc \
+  && sudo npm install -g npm@"$NPM_VERSION" \
+  && sudo npm cache clear
 
 
 #========================================================================
