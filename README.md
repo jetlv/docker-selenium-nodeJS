@@ -1,9 +1,10 @@
-# Docker repo to spawn selenium standalone servers with Chrome and Firefox with VNC support
+# Docker repo to spawn selenium standalone servers with Chrome with VNC support and NodeJS 
+
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/elgalu/docker-selenium?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 * selenium-server-standalone
 * google-chrome-stable
-* firefox (stable)
+* nodeJS
 * VNC access (useful for debugging the container)
 * openbox (lightweight window manager using freedesktop standards)
 
